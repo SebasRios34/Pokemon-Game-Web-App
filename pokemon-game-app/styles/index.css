@@ -1,0 +1,13 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+  /*NEEDS Background
+  background: rgb(251, 157, 63);
+  background: radial-gradient(
+    circle,
+    rgba(251, 157, 63, 1) 0%,
+    rgba(70, 252, 250, 1) 100%
+  ); */
+}
