@@ -6,7 +6,10 @@ const canvas = document.querySelector("canvas");
 canvas.width = 1024;
 canvas.height = 576;
 
-for (let i = 0; i < collisionsMapData.length; i += 90) {}
+let arr = [];
+for (let i = 0; i < collisionsMapData.length; i += 90) {
+  let subarr = [];
+}
 
 //Canvas Creation and Positioning
 /*canvasContext:
