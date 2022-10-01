@@ -6,7 +6,74 @@ const canvas = document.querySelector("canvas");
 canvas.width = 1024;
 canvas.height = 576;
 
-for (let i = 0; i < collisionsMapData.length; i += 90) {}
+/*Collisions Configuration
+  collisionsMap (array): local array with 90 length arrays contained with collisions
+  collisionsMapData (array): array exported from map collisioned layer
+  Boundary (class): class which contains properties for collisions map
+    props:
+      position: positions for boundaries
+      width: width of zoomed map into canvas
+      height: height of zoomed map into canvas
+    methods:
+      draw: draw collisioned map into canvas
+  boundaries (array): individual collisions into array
+*/
+const collisionsMap = [];
+
+for (let i = 0; i < collisionsMapData.length; i += 90) {
+  collisionsMap.push(collisionsMapData.slice(i, i + 90));
+}
+
+class Boundary {
+  static width = 48;
+  static height = 48;
+  constructor({ position }) {
+    this.position = position;
+    this.width = 48;
+    this.height = 48;
+  }
+
+  draw() {
+    canvasContext.fillStyle = "rgba(225, 0, 0, 0.0)";
+    canvasContext.fillRect(
+      this.position.x,
+      this.position.y,
+      this.width,
+      this.height
+    );
+  }
+}
+
+const boundaries = [];
+
+const offset = {
+  x: -1695,
+  y: -1240,
+};
+
+/*pushing items into boundaries (array)
+  description: loop throught the items inside an array, which are inside another array
+  [
+    [0, 1025, 0],
+    [1025, 0, 1025],
+    [0, 1025, 0]
+  ]
+  x & y: represent the position of the red collision block in the map
+*/
+collisionsMap.forEach((row, yIndex) => {
+  row.forEach((redSymbol, xIndex) => {
+    if (redSymbol === 1025) {
+      boundaries.push(
+        new Boundary({
+          position: {
+            x: xIndex * Boundary.width + offset.x,
+            y: yIndex * Boundary.height + offset.y,
+          },
+        })
+      );
+    }
+  });
+});
 
 //Canvas Creation and Positioning
 /*canvasContext:
@@ -58,22 +125,48 @@ const playerPosition = {
     draw: canvasContext.drawImage
 */
 class Sprite {
-  constructor({ position, velocity, image }) {
+  constructor({ position, velocity, image, frames = { max: 1 } }) {
     this.position = position;
     this.image = image;
+    this.frames = frames;
+    this.image.onload = () => {
+      this.width = this.image.width / this.frames.max;
+      this.height = this.image.height;
+    };
   }
 
   draw() {
-    let { image, position } = this;
-    canvasContext.drawImage(image, position.x, position.y);
+    let { image, position, frames } = this;
+    canvasContext.drawImage(
+      image,
+      0,
+      0,
+      image.width / frames.max,
+      image.height,
+      position.x,
+      position.y,
+      image.width / frames.max,
+      image.height
+    );
   }
 }
+
+const player = new Sprite({
+  position: {
+    x: playerPosition.xAxis,
+    y: playerPosition.yAxis,
+  },
+  image: playerImage,
+  frames: {
+    max: 4,
+  },
+});
 
 //Create instance of background
 const background = new Sprite({
   position: {
-    x: -1700,
-    y: -1220,
+    x: offset.x,
+    y: offset.y,
   },
   image: image,
 });
@@ -97,44 +190,119 @@ const keys = {
   },
 };
 
+const movables = [background, ...boundaries];
+
+const rectangularCollision = ({ rectangle1, rectangle2 }) => {
+  return (
+    rectangle1.position.x + rectangle1.width >= rectangle2.position.x &&
+    rectangle1.position.x <= rectangle2.position.x + rectangle2.width &&
+    rectangle1.position.y <= rectangle2.position.y + rectangle2.height &&
+    rectangle1.position.y + rectangle1.height >= rectangle2.position.y
+  );
+};
+
 //Player Movement
 const animate = () => {
   let { w, a, s, d, running } = keys;
-  let { position } = background;
 
   //Infinite Loop for Animation
   window.requestAnimationFrame(animate);
+  //draw background
   background.draw();
-  canvasContext.drawImage(
-    playerImage,
-    0,
-    0,
-    playerImage.width / 4,
-    playerImage.height,
-    playerPosition.xAxis,
-    playerPosition.yAxis,
-    playerImage.width / 4,
-    playerImage.height
-  );
+  boundaries.forEach((boundary) => {
+    boundary.draw();
+  });
+  player.draw();
 
-  //remove up
+  /*Logic Proces:
+    going throught each boundary, if detect with the rectangularCollision 
+    function, set moving to false and player wont me able to move
+  */
+  let moving = true;
   if (w.pressed && lastKey === "w") {
-    position.y += 3;
-    //move up and running
-  } else if (w.pressed && running.pressed && lastKey === "W") {
-    position.y += 6;
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        rectangularCollision({
+          rectangle1: player,
+          rectangle2: {
+            ...boundary,
+            position: { x: boundary.position.x, y: boundary.position.y + 3 },
+          },
+        })
+      ) {
+        moving = false;
+        break;
+      }
+    }
+    if (moving) {
+      movables.forEach((movable) => {
+        movable.position.y += 3;
+      });
+    }
   } else if (a.pressed && lastKey === "a") {
-    position.x += 3;
-  } else if (a.pressed && running.pressed && lastKey === "A") {
-    position.x += 6;
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        rectangularCollision({
+          rectangle1: player,
+          rectangle2: {
+            ...boundary,
+            position: { x: boundary.position.x + 3, y: boundary.position.y },
+          },
+        })
+      ) {
+        moving = false;
+        break;
+      }
+    }
+    if (moving) {
+      movables.forEach((movable) => {
+        movable.position.x += 3;
+      });
+    }
   } else if (s.pressed && lastKey === "s") {
-    position.y -= 3;
-  } else if (s.pressed && running.pressed && lastKey === "S") {
-    position.y -= 6;
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        rectangularCollision({
+          rectangle1: player,
+          rectangle2: {
+            ...boundary,
+            position: { x: boundary.position.x, y: boundary.position.y - 3 },
+          },
+        })
+      ) {
+        moving = false;
+        break;
+      }
+    }
+    if (moving) {
+      movables.forEach((movable) => {
+        movable.position.y -= 3;
+      });
+    }
   } else if (d.pressed && lastKey === "d") {
-    position.x -= 3;
-  } else if (d.pressed && running.pressed && lastKey === "D") {
-    position.x -= 6;
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        rectangularCollision({
+          rectangle1: player,
+          rectangle2: {
+            ...boundary,
+            position: { x: boundary.position.x - 3, y: boundary.position.y },
+          },
+        })
+      ) {
+        moving = false;
+        break;
+      }
+    }
+    if (moving) {
+      movables.forEach((movable) => {
+        movable.position.x -= 3;
+      });
+    }
   }
 };
 
@@ -217,5 +385,3 @@ document.addEventListener("keyup", (event) => {
       break;
   }
 });
-
-console.log(collisionsMapData);
