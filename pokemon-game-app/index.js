@@ -79,24 +79,24 @@ const canvasContext = canvas.getContext("2d");
     onload: callback function that waits the image to load on screen
 */
 const image = new Image();
-image.src = "./images/Pokemon Styled Game Map.png";
+image.src = "./pokemon-game-app/images/Pokemon Styled Game Map.png";
 
 //Foreground Creation and Positioing
 const foregroundImage = new Image();
-foregroundImage.src = "./images/foregroundObjects.png";
+foregroundImage.src = "./pokemon-game-app/images/foregroundObjects.png";
 
 //Player Creation and Positioning
 const playerDownImage = new Image();
-playerDownImage.src = "./images/playerDown.png";
+playerDownImage.src = "./pokemon-game-app/images/playerDown.png";
 
 const playerUpImage = new Image();
-playerUpImage.src = "./images/playerUp.png";
+playerUpImage.src = "./pokemon-game-app/images/playerUp.png";
 
 const playerLeftImage = new Image();
-playerLeftImage.src = "./images/playerLeft.png";
+playerLeftImage.src = "./pokemon-game-app/images/playerLeft.png";
 
 const playerRightImage = new Image();
-playerRightImage.src = "./images/playerRight.png";
+playerRightImage.src = "./pokemon-game-app/images/playerRight.png";
 
 //Player Position Object
 /*playerPosition:
